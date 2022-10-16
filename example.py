@@ -10,8 +10,6 @@ from scipy.interpolate import interp1d
 
 # YOU SHOULD LOAD FILES WITH 44100HZ IF THATS WHAT IN THE CLASS INIT
 
-x=np.array([0.,1.,2.,3.,4.,5.,6.,7.,8.,9.,10.])
-y=np.array([0.,1.,1.,0.5,0.7,1.,1.3,1.6,1.7,1.7,1.7])
 
 
 # apply EQ and cab
@@ -33,7 +31,9 @@ JM.apply_basscut() # simple bass cut
 #JM.apply_fender_eq() # old fender eq
 
 #alternative marshall amp
+#JM.plot_cubic_eq(JM_clean.EQ.marshall_387_dB,JM_clean.EQ.marshall_387_Hz) # can plot amp eq
 JM.apply_cubic_eq(JM.EQ.marshall_387_dB,JM.EQ.marshall_387_Hz)
+#JM.apply_marshall_eq() # old marshall eq
 
 #power amp clipping
 JM.sigmoid_clip(0.45,0.0) # first argument is poweramp headroom, higher is cleaner
