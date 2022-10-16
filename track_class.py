@@ -3,6 +3,9 @@ import wave
 from numpy.fft import fft
 from numpy.fft import fftfreq
 from numpy.fft import ifft
+from numpy.fft import rfft
+from numpy.fft import rfftfreq
+from numpy.fft import irfft
 import simpleaudio as sa
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
@@ -30,6 +33,8 @@ class track_class:
 		self.sample_rate = sample_rate
 		self.normalisation_factor = 0.85 # the loudest a signal will be with respect to digital headroom of integer
 		self.audio = "N/A"
+		self.real_spectrograph = "N/A"
+		self.real_fft_freq = "N/A"
 		self.spectrograph = "N/A" #  the complex version of the spectrum, includes both real spectrum and imaginary spectrum
 		self.spectrum = "N/A" # real part of fourrier spectrum
 		self.spectrum_im = "N/A" # imaginary part of fourrier spectrum
@@ -78,11 +83,17 @@ class track_class:
 			plt.xlim(start_time,end_time)
 		plt.show()
 
+	# def fft(self):
+	# 	self.spectrograph = fft(self.audio)
+	# 	self.spectrum = self.spectrograph.real
+	# 	self.spectrum_im = self.spectrograph.imag
+	# 	self.fft_freq = self.sample_rate*fftfreq(self.audio.shape[-1])
+
 	def fft(self):
-		self.spectrograph = fft(self.audio)
+		self.spectrograph = rfft(self.audio)
 		self.spectrum = self.spectrograph.real
 		self.spectrum_im = self.spectrograph.imag
-		self.fft_freq = self.sample_rate*fftfreq(self.audio.shape[-1])
+		self.fft_freq = self.sample_rate*rfftfreq(self.audio.shape[-1])
 
 	def plot_spectrum(self,f_0=0.,f_1=-1.):
 		if self.spectrum =="N/A":
@@ -109,8 +120,8 @@ class track_class:
 	def invfft(self):
 		self.spectrum = self.spectrograph.real
 		self.spectrum_im = self.spectrograph.imag
-		self.fft_freq = self.sample_rate*fftfreq(self.audio.shape[-1])
-		pp_signal = ifft(self.spectrograph)
+		self.fft_freq = self.sample_rate*rfftfreq(self.audio.shape[-1])
+		pp_signal = irfft(self.spectrograph)
 		self.audio = np.array(pp_signal.real)
 
 	# headroom means less distortion, generally headroom > 1 is pretty clean
@@ -211,10 +222,10 @@ class track_class:
 		self.bmt_filter(-1.0,50.,50.,[[0.45,3000.,1300.]],-0.7,5200.,2000.)
 
 	def plot_basscut(self):
-		self.plot_bmt_filter(-1.0,40.,40.,[],0.0,5200.,2000.)
+		self.plot_bmt_filter(-1.0,80.,40.,[],0.0,5200.,2000.)
 
 	def apply_basscut(self):
-		self.bmt_filter(-1.0,40.,40.,[],0.0,5200.,2000.)
+		self.bmt_filter(-1.0,80.,40.,[],0.0,5200.,2000.)
 
 	#uses cubic interpolation to sample points given to it and return smooth eq curve
 	#should start at 0Hz and end at like 40kHz

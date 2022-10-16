@@ -18,27 +18,30 @@ JM = track_class.track_class('raw/robin_JM.wav',44100)
 
 
 
-JM.play_audio() # plays dry input file
+# JM.play_audio() # plays dry input file
 
-#JM.plot_basscut() # plots basscut
+# JM.plot_basscut() # plots basscut
 JM.apply_basscut() # simple bass cut
 
-#preamp clipping
-#JM.sigmoid_clip(2.2,0.02) # first argument is preamp headroom, higher is cleaner
+# JM.play_audio() # plays dry input file
 
-#JM.plot_cubic_eq(JM_clean.EQ.fender_467_dB,JM_clean.EQ.fender_467_Hz) # can plot amp eq
-#JM.apply_cubic_eq(JM.EQ.fender_467_dB,JM.EQ.fender_467_Hz)
+#preamp clipping
+JM.sigmoid_clip(2.2,0.02) # first argument is preamp headroom, higher is cleaner
+
+JM.plot_cubic_eq(JM.EQ.fender_467_dB,JM.EQ.fender_467_Hz) # can plot amp eq
+JM.apply_cubic_eq(JM.EQ.fender_467_dB,JM.EQ.fender_467_Hz)
 #JM.apply_fender_eq() # old fender eq
 
 #alternative marshall amp
 #JM.plot_cubic_eq(JM_clean.EQ.marshall_387_dB,JM_clean.EQ.marshall_387_Hz) # can plot amp eq
-JM.apply_cubic_eq(JM.EQ.marshall_387_dB,JM.EQ.marshall_387_Hz)
+#JM.apply_cubic_eq(JM.EQ.marshall_387_dB,JM.EQ.marshall_387_Hz)
 #JM.apply_marshall_eq() # old marshall eq
 
 #power amp clipping
 JM.sigmoid_clip(0.45,0.0) # first argument is poweramp headroom, higher is cleaner
 
 #JM_.apply_CV30_cab_sim() # old cabsim
+JM.plot_cubic_eq(JM.EQ.CV30_dB,JM.EQ.CV30_Hz) # better cabsim
 JM.apply_cubic_eq(JM.EQ.CV30_dB,JM.EQ.CV30_Hz) # better cabsim
 
 JM.play_audio() #plays processed file
