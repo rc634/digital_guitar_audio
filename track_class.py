@@ -5,7 +5,24 @@ from numpy.fft import fftfreq
 from numpy.fft import ifft
 import simpleaudio as sa
 import matplotlib.pyplot as plt
-import track_class
+from scipy.interpolate import interp1d
+
+class eq_curves:
+	def __init__(self):
+		
+		# this corresponds to bass=3.2, mids=8.5, treble=6.8 on a marshall https://www.guitarscience.net/tsc/marshall.htm#RIN=1300&R1=33k&RT=220k&RB=1M&RM=25k&RL=517k&C1=470p&C2=22n&C3=22n&RB_pot=LogB&RM_pot=Linear&RT_pot=Linear
+		self.marshall_387_Hz = [0.,10.,20.,30.,60.,90.,140.,200.,300.,400.,500.,600.,800.,1000.,1300.,2000.,3000.,4000.,5000.,7000.,10000.,15000.,20000.,25000.,30000.,35000.,40000.]
+		self.marshall_387_dB = [-30.,-19.,-13.,-11.,-7.7,-6.7,-6.4,-6.7,-7.3,-7.9,-8.2,-8.2,-7.8,-7.3,-6.4,-4.9,-3.9,-3.5,-3.2,-3.,-2.9,-2.8,-2.8,-2.8,-2.8,-2.8,-2.8]
+		
+		# celestion vintage 30 speaker cab, https://celestion.com/wp-content/uploads/2019/09/T3903-Vintage-30-copy.jpg
+		self.CV30_Hz=[0.,10.,20.,30.,40.,50.,70.,100.,200.,300.,400.,500.,700.,1000.,2000.,3000.,4000.,5000.,6000.,7000.,8000.,9000.,10000.,15000.,20000.,30000.,40000.]
+		self.CV30_dB=[50.,65.,76.,83.,85.,87.,92.,95.,98.,98.,98.,100.,101.,101.,103.,105.,103.,98.,87.,82.,77.,77.,80.,75.,75.,73.,70.]
+		
+		#fender bassman amp with bass=4.4, mids = 6.5, treble=7.4, https://www.guitarscience.net/tsc/bassman5f6a.htm#RIN=1300&R1=56k&RT=250k&RB=1M&RM=25k&RL=1M&C1=250p&C2=20n&C3=20n&RB_pot=LogA&RM_pot=Linear&RT_pot=Linear
+		self.fender_467_Hz=[0.,10.,20.,30.,40.,50.,60.,80.,100.,200.,300.,400.,500.,600.,800.,1000.,2000.,3000.,4000.,5000.,7000.,10000.,20000.,30000.,40000.]
+		self.fender_467_dB=[-18.,-12.2,-7.7,-5.9,-5.2,-4.8,-4.8,-4.9,-5.2,-7.7,-9.9,-11.4,-12.2,-12.5,-12.,-11.,-7.,-5.,-4.2,-3.6,-3.1,-2.8,-2.5,-2.5,-2.5]
+
+
 
 class track_class:
 	def __init__(self,filename,sample_rate):
@@ -21,6 +38,7 @@ class track_class:
 		self.raw_audio = "N/A"
 		self.total_time = "N/A"
 		self.load_audio_file_to_nparray()
+		self.EQ = eq_curves()
 
 	def normalise(self, ratio="N/A"):
 		if ratio == "N/A":
@@ -197,6 +215,45 @@ class track_class:
 
 	def apply_basscut(self):
 		self.bmt_filter(-1.0,40.,40.,[],0.0,5200.,2000.)
+
+	#uses cubic interpolation to sample points given to it and return smooth eq curve
+	#should start at 0Hz and end at like 40kHz
+	def apply_cubic_eq(self,dB_array,Hz_array):	
+		self.fft()
+		fnew = np.linspace(0.,40000.,100000)
+
+		#f = interp1d(x, y) # linear interp
+		dB_interp = interp1d(np.array(Hz_array), np.array(dB_array), kind='cubic')
+		eqfilter = np.exp(np.array(dB_interp(fnew))/20.)
+
+		self.spectrograph = np.multiply( np.interp(self.fft_freq,fnew,eqfilter) , self.spectrograph ) 
+		self.invfft()
+		self.normalise()
+
+	#uses cubic interpolation to sample points given to it and return smooth eq curve
+	#should start at 0Hz and end at like 40kHz
+	def plot_cubic_eq(self,dB_array,Hz_array):	
+		self.fft()
+		fnew = np.linspace(0.,40000.,100000)
+
+		#f = interp1d(x, y) # linear interp
+		dB_interp = interp1d(np.array(Hz_array), np.array(dB_array), kind='cubic')
+		eqfilter = np.exp(np.array(dB_interp(fnew))/20.)
+
+		self.spectrograph = np.multiply( np.interp(self.fft_freq,fnew,eqfilter) , self.spectrograph ) 
+
+		plt.plot(Hz_array,dB_array,'k')
+
+		#plt.plot(self.fft_freq,20.*np.log(np.interp(self.fft_freq,fnew,eqfilter)),'r')
+
+		plt.plot(fnew,20*np.log(eqfilter),'r')
+
+		plt.legend(['Input data points','Interpolated function'])
+
+		plt.xscale("log")
+		plt.xlim(10,30000)
+		plt.show()
+
 
 
 

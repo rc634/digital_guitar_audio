@@ -6,68 +6,41 @@ from numpy.fft import ifft
 import simpleaudio as sa
 import matplotlib.pyplot as plt
 import track_class
+from scipy.interpolate import interp1d
 
 # YOU SHOULD LOAD FILES WITH 44100HZ IF THATS WHAT IN THE CLASS INIT
 
-
-
+x=np.array([0.,1.,2.,3.,4.,5.,6.,7.,8.,9.,10.])
+y=np.array([0.,1.,1.,0.5,0.7,1.,1.3,1.6,1.7,1.7,1.7])
 
 
 # apply EQ and cab
 
-JM_clean = track_class.track_class('raw/robin_JM.wav',44100)
-
-
-# plots eq curves - these are hard coded into the track_class object
-JM_clean.plot_basscut()
-JM_clean.plot_fender_eq()
-JM_clean.plot_CV30_cab_sim()
-
-JM_clean.play_audio() # plays dry input file
-
-JM_clean.apply_fender_eq()
-
-JM_clean.apply_CV30_cab_sim()
-
-JM_clean.play_audio() # plays EQ->cab
-
-
-
-# # new track and instead now apply basscut, preamp clipping, EQ, power amp clipping and speaker cab.
-
 JM = track_class.track_class('raw/robin_JM.wav',44100)
 
-JM.apply_basscut()
 
-JM.sigmoid_clip(2.2,0.02) # first argument is preamp headroom, higher is cleaner
 
-JM.apply_fender_eq()
+JM.play_audio() # plays dry input file
 
-JM.sigmoid_clip(0.65,0.0) # first argument is poweramp headroom, higher is cleaner
+#JM.plot_basscut() # plots basscut
+JM.apply_basscut() # simple bass cut
 
-JM.apply_CV30_cab_sim()
+#preamp clipping
+#JM.sigmoid_clip(2.2,0.02) # first argument is preamp headroom, higher is cleaner
 
-JM.play_audio()
+#JM.plot_cubic_eq(JM_clean.EQ.fender_467_dB,JM_clean.EQ.fender_467_Hz) # can plot amp eq
+#JM.apply_cubic_eq(JM.EQ.fender_467_dB,JM.EQ.fender_467_Hz)
+#JM.apply_fender_eq() # old fender eq
 
-# JM.plot_waveform_vs_raw()
+#alternative marshall amp
+JM.apply_cubic_eq(JM.EQ.marshall_387_dB,JM.EQ.marshall_387_Hz)
 
-# high gain example
-# new track and instead now apply basscut, preamp clipping, EQ, power amp clipping and speaker cab. 
+#power amp clipping
+JM.sigmoid_clip(0.45,0.0) # first argument is poweramp headroom, higher is cleaner
 
-BIB = track_class.track_class('raw/robin_BIB.wav',44100)
+#JM_.apply_CV30_cab_sim() # old cabsim
+JM.apply_cubic_eq(JM.EQ.CV30_dB,JM.EQ.CV30_Hz) # better cabsim
 
-BIB.apply_basscut()
+JM.play_audio() #plays processed file
 
-BIB.sigmoid_clip(0.3,0.02) # first argument is preamp headroom, higher is cleaner
 
-BIB.apply_fender_eq()
-
-BIB.blend_clean(0.6)
-
-BIB.sigmoid_clip(0.13,0.0) # first argument is poweramp headroom, higher is cleaner
-
-BIB.apply_CV30_cab_sim()
-
-BIB.play_audio()
-
-#JM.plot_waveform_vs_raw()
