@@ -26,6 +26,20 @@ class eq_curves:
 		self.fender_467_dB=[-18.,-12.2,-7.7,-5.9,-5.2,-4.8,-4.8,-4.9,-5.2,-7.7,-9.9,-11.4,-12.2,-12.5,-12.,-11.,-7.,-5.,-4.2,-3.6,-3.1,-2.8,-2.5,-2.5,-2.5]
 
 
+class clipping_charactoristics:
+	def __init__(self):
+		# op amp clipping emulation
+		self.op_amp_input = [-100.,-30.,-10.,-3.,-1.,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.,3.,10.,30.,100.]
+		self.op_amp_output = [-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.8,0.8,0.8,0.8,0.8,0.8]
+
+		# fuzz style clipping (transistor hitting power rails with deadzone)
+		self.fuzz_input = [-100.,-30.,-10.,-3.,-1.,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.,3.,10.,30.,100.]
+		self.fuzz_output = [-0.83,-0.83,-0.83,-0.83,-0.83,-0.83 ,-0.66,-0.4,-0.24,0.,0.,0.,0.,0.05,0.1,0.2,0.4,0.6,0.7,0.73,0.74,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75]
+
+		# tube style soft clipping
+		self.tube_input = [-100.,-30.,-10.,-3.,-2.,-1.,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.,2.,3.,10.,30.,100.]
+		self.tube_output= [-0.80,-0.76,-0.70,-0.63,-0.59,-0.5,-0.485,-0.47,-0.45,-0.43,-0.40,-0.35,-0.28,-0.2,-0.1,0.,0.1,0.2,0.28,0.35,0.40,0.43,0.45,0.47,0.485,0.5,0.59,0.63,0.70,0.76,0.80]
+
 
 class track_class:
 	def __init__(self,filename,sample_rate):
@@ -44,6 +58,7 @@ class track_class:
 		self.total_time = "N/A"
 		self.load_audio_file_to_nparray()
 		self.EQ = eq_curves()
+		self.clip = clipping_charactoristics()
 
 	def normalise(self, ratio="N/A"):
 		if ratio == "N/A":
@@ -77,10 +92,11 @@ class track_class:
 		plt.show()
 
 	def plot_waveform_vs_raw(self,start_time=0., end_time=-1.):
-		plt.plot(self.time,self.raw_audio/32767.)
-		plt.plot(self.time,self.audio/32767.)
+		plt.plot(self.time,self.raw_audio/32767.,'r')
+		plt.plot(self.time,self.audio/32767.,'b')
 		if end_time > start_time:
 			plt.xlim(start_time,end_time)
+		plt.legend(['Raw Audio','Modified Audio'])
 		plt.show()
 
 	# def fft(self):
@@ -222,10 +238,10 @@ class track_class:
 		self.bmt_filter(-1.0,50.,50.,[[0.45,3000.,1300.]],-0.7,5200.,2000.)
 
 	def plot_basscut(self):
-		self.plot_bmt_filter(-1.0,80.,40.,[],0.0,5200.,2000.)
+		self.plot_bmt_filter(-1.0,100.,40.,[],0.0,5200.,2000.)
 
 	def apply_basscut(self):
-		self.bmt_filter(-1.0,80.,40.,[],0.0,5200.,2000.)
+		self.bmt_filter(-1.0,100.,40.,[],0.0,5200.,2000.)
 
 	#uses cubic interpolation to sample points given to it and return smooth eq curve
 	#should start at 0Hz and end at like 40kHz
@@ -264,6 +280,33 @@ class track_class:
 		plt.xscale("log")
 		plt.xlim(10,30000)
 		plt.show()
+
+	def apply_clipping(self,input_,output_,push):
+		input_new = np.linspace(-100.,100.,100000)
+		output_new = interp1d(np.array(input_), np.array(output_), kind='linear') # can use linear, quadratic, cubic, maybe more?
+		output_new = np.array(output_new(input_new))
+
+		plt.plot(input_,output_,'k')
+		plt.plot(input_new,output_new,'r')
+		plt.xlim(-10.2,10.2)
+		plt.legend(['Input data points','Interpolated function'])
+		plt.show()
+
+		self.audio =  np.interp(push*self.audio/32767.,input_new,output_new) 
+		self.normalise()
+
+	def apply_reverb(self):
+		reverb = np.exp(-((self.time-0.5)/2.*1000.)**2)
+		
+		self.fft()
+		reverb_spectrograph = rfft(reverb)
+		reverb_spectrum = reverb_spectrograph.real
+		reverb_spectrum_im = reverb_spectrograph.imag
+
+
+		self.spectrograph =np.multiply( self.spectrograph , reverb_spectrograph ) 
+		pp_signal = irfft(self.spectrograph)
+		self.audio = np.array(pp_signal.real)
 
 
 
